@@ -1,7 +1,8 @@
-import { client } from "../app";
-import { CronJob } from "cron";
+import { checkRoles } from "../lib/wix.lib";
 
-export function setBetScheduler() {
-  const job = new CronJob("0 1 0 * * *", async function () {});
-  job.start();
+export async function startSchedulerToCheckRoles() {
+  await checkRoles();
+  setInterval(() => {
+    checkRoles().catch(console.error);
+  }, 1000 * 60 * 60 * 3);
 }

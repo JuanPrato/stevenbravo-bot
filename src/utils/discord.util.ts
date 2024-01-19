@@ -4,6 +4,9 @@ import {
   EmbedBuilder,
   SlashCommandBuilder,
 } from "discord.js";
+import { User, getAllRoles } from "../lib/db.lib";
+import { mainGuild } from "../caches/guild.cache";
+import { client } from "../app";
 
 export const createSlashCommand = (
   commandName: string,
@@ -67,4 +70,31 @@ export const createEmbedFieldWithText = (
     name: title,
     value: text,
   };
+};
+
+export const updateUsersRoles = async (users: Map<string, User[]>) => {
+  const roles = await getAllRoles();
+
+  const guild = client.guilds.cache.get(mainGuild.id);
+  await guild?.roles.fetch();
+  await guild?.members.fetch();
+
+  Array.from(users.entries()).forEach(([planName, roleUsers]) => {
+    const roleId = roles.find((role) => role.planId === planName)?.roleId;
+    if (!roleId) return;
+
+    guild?.roles.cache
+      .get(roleId)
+      ?.members?.filter((m) => !roleUsers.some((ru) => ru.userId === m.id))
+      .forEach((u) => u.roles.remove(roleId));
+
+    roleUsers.forEach(async (ru) => {
+      const member = guild?.members.cache.get(ru.userId);
+
+      if (member?.roles.resolveId(roleId)) {
+        return;
+      }
+      await member?.roles.add(roleId);
+    });
+  });
 };

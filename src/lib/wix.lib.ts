@@ -1,31 +1,71 @@
-import { members } from "@wix/members";
 import { orders } from "@wix/pricing-plans";
 import { wixClient } from "..";
 import { SortOrder } from "@wix/pricing-plans/build/cjs/src/pricing-plans-v2-order.universal";
+import { User, getUsers } from "./db.lib";
+import { updateUsersRoles } from "../utils/discord.util";
 
-async function memberListOrders() {
+export async function checkRoles() {
   try {
-    const response = await wixClient.orders.managementListOrders({
-      paymentStatuses: [orders.PaymentStatus.PAID],
-      sorting: {
-        fieldName: "_createdDate",
-        order: SortOrder.DESC,
-      },
-    });
+    const users = await getUsers();
 
-    const buyers = response.orders.map((order) => {
-      return order.buyer?.memberId;
-    });
+    const membersId = users.map((user) => user.userId);
 
-    const membersData = await wixClient.members
-      .queryMembers({
-        fieldSet: members.Set.EXTENDED,
-      })
-      .in("_id", buyers)
-      .find();
+    let wixOrders = await getOrders(membersId);
+
+    if (!wixOrders) return;
+
+    const rolesToUpdate = new Map<string, User[]>();
+
+    fillMapWithOrders(rolesToUpdate, wixOrders, users);
+
+    let offset = wixOrders.pagingMetadata?.count || 0;
+
+    while (
+      (wixOrders.pagingMetadata?.total || 0) >
+      (wixOrders.pagingMetadata?.offset || 0) + offset
+    ) {
+      wixOrders = await getOrders(membersId, offset);
+      fillMapWithOrders(rolesToUpdate, wixOrders, users);
+      offset += wixOrders.pagingMetadata?.count || 1;
+    }
+
+    await updateUsersRoles(rolesToUpdate);
   } catch (err) {
     console.error((err as any).details.applicationError);
   }
+}
+
+function fillMapWithOrders(
+  map: Map<string, User[]>,
+  wixOrders: orders.ListOrdersResponse &
+    orders.ListOrdersResponseNonNullableFields,
+  users: User[]
+) {
+  wixOrders.orders.reduce<Map<string, User[]>>((acc, order) => {
+    if (!order.planName) return acc;
+    if (!acc.has(order.planName)) {
+      acc.set(order.planName, []);
+    }
+
+    acc
+      .get(order.planName)!
+      .push(users.find((u) => u.wixId === order.buyer?.memberId)!);
+
+    return acc;
+  }, map);
+}
+
+async function getOrders(membersId: string[], offset: number = 0) {
+  return wixClient.orders.managementListOrders({
+    paymentStatuses: [orders.PaymentStatus.PAID],
+    orderStatuses: [orders.OrderStatus.ACTIVE],
+    buyerIds: membersId,
+    sorting: {
+      fieldName: "_createdDate",
+      order: SortOrder.DESC,
+    },
+    offset,
+  });
 }
 
 export async function checkForPlan(email: string) {
@@ -48,7 +88,10 @@ export async function checkForPlan(email: string) {
 
   const order = ordersResponse.orders[0];
 
-  if (!order) return null;
+  if (!order) return {};
 
-  return order.planId;
+  return {
+    plan: order.planName,
+    memberId: member._id,
+  };
 }
