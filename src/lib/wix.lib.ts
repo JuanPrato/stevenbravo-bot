@@ -27,3 +27,28 @@ async function memberListOrders() {
     console.error((err as any).details.applicationError);
   }
 }
+
+async function checkForPlan(email: string) {
+  const members = await wixClient.members
+    .queryMembers()
+    .eq("loginEmail", email)
+    .find();
+
+  const member = members.items[0];
+
+  if (!member || !member._id) {
+    throw new Error(`No se encontró cuenta asociada al mail ${email}`);
+  }
+
+  const ordersResponse = await wixClient.orders.managementListOrders({
+    buyerIds: [member._id],
+    orderStatuses: [orders.OrderStatus.ACTIVE],
+    limit: 1,
+  });
+
+  const order = ordersResponse.orders[0];
+
+  if (!order) return null;
+
+  return order.planId;
+}

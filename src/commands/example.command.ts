@@ -10,7 +10,8 @@ const ExampleCommand: ICommand = {
     const users = await db.select().from(usersTable);
 
     await message.reply(
-      `${users.reduce<string>(
+      `USUARIOS:
+      ${users.reduce<string>(
         (acc, user) => acc + `\n <@${user.userId}> ${user.mail}`,
         ""
       )}`

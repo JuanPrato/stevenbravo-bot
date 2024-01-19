@@ -35,7 +35,7 @@ export const wixClient = createClient({
 });
 
 const dbClient = createDbClient({
-  url: "file:./db/database.db",
+  url: "file:src/db/database.db",
 });
 
 export const db = drizzle(dbClient);
