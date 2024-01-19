@@ -1,0 +1,32 @@
+{
+  "name": "stevenbravo-bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.ts",
+  "scripts": {
+    "start": "node dist/index.js",
+    "dev": "ts-node-dev --respawn src/index.ts",
+    "build": "tsc",
+    "db:generate": "drizzle-kit generate:sqlite",
+    "db:push": "drizzle-kit push:sqlite",
+    "db:studio": "drizzle-kit studio"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "drizzle-kit": "^0.20.13",
+    "ts-node-dev": "^2.0.0"
+  },
+  "dependencies": {
+    "@libsql/client": "0.4.0-pre.7",
+    "@wix/members": "^1.0.46",
+    "@wix/pricing-plans": "^1.0.42",
+    "@wix/sdk": "^1.6.4",
+    "cron": "^3.1.6",
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.3.1",
+    "drizzle-orm": "^0.29.3"
+  }
+}
