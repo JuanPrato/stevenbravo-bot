@@ -2,6 +2,7 @@ import { client } from "../app";
 import { commands } from "../caches/commands.cache";
 import { mainGuild } from "../caches/guild.cache";
 import { saveOrUpdateUserEmail } from "../lib/db.lib";
+import { emailRegex } from "../lib/regex.lib";
 import { ICommandException, isAnswerable } from "../types/command.type";
 
 // Text based command handler
@@ -30,9 +31,6 @@ client.on("messageCreate", async (message) => {
     await message.reply((e as ICommandException).message);
   }
 });
-
-const emailRegex =
-  /^[-!#$%&'*+\/0-9=?A-Z^_a-z{|}~](\.?[-!#$%&'*+\/0-9=?A-Z^_a-z`{|}~])*@[a-zA-Z0-9](-*\.?[a-zA-Z0-9])*\.[a-zA-Z](-?[a-zA-Z0-9])+$/;
 
 // Register mail
 client.on("messageCreate", async (message) => {
