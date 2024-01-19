@@ -1,8 +1,9 @@
 import { client } from "../app";
 import { commands } from "../caches/commands.cache";
 import { mainGuild } from "../caches/guild.cache";
-import { saveOrUpdateUserEmail } from "../lib/db.lib";
+import { getRoleByPlanId, saveOrUpdateUserEmail } from "../lib/db.lib";
 import { emailRegex } from "../lib/regex.lib";
+import { checkForPlan } from "../lib/wix.lib";
 import { ICommandException, isAnswerable } from "../types/command.type";
 
 // Text based command handler
@@ -41,8 +42,9 @@ client.on("messageCreate", async (message) => {
   await guild?.members.fetch();
 
   const userId = message.author.id;
+  const member = guild?.members.cache.get(userId);
 
-  if (!guild?.members.cache.has(userId)) return;
+  if (!member) return;
 
   const mail = message.content;
 
@@ -56,4 +58,18 @@ client.on("messageCreate", async (message) => {
   await message.reply(
     `El mail: ${mail} fue asociado al usuario ${message.author}`
   );
+
+  const planId = await checkForPlan(mail);
+
+  if (!planId) return;
+
+  const roleId = await getRoleByPlanId(planId);
+
+  if (!roleId) return;
+
+  const role = guild?.roles.cache.get(roleId);
+
+  if (!role) return;
+
+  await member.roles.add(role);
 });

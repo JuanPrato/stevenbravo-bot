@@ -16,6 +16,12 @@ export async function getAllRoles() {
   return db.select().from(roles);
 }
 
+export async function getRoleByPlanId(planId: string) {
+  const results = await db.select().from(roles).where(eq(roles.planId, planId));
+
+  return results[0]?.roleId;
+}
+
 export async function addRoleToPlan(role: string, plan: string) {
   await db.insert(roles).values({
     planId: plan,

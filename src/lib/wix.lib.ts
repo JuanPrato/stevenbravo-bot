@@ -28,7 +28,7 @@ async function memberListOrders() {
   }
 }
 
-async function checkForPlan(email: string) {
+export async function checkForPlan(email: string) {
   const members = await wixClient.members
     .queryMembers()
     .eq("loginEmail", email)
