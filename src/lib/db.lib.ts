@@ -38,6 +38,6 @@ export async function editRolePlan(role: string, plan: string) {
     .where(eq(roles.planId, plan));
 }
 
-export async function deletePlanByRole(role: string) {
-  await db.delete(roles).where(eq(roles.roleId, role));
+export async function deleteRoleByPlan(plan: string) {
+  await db.delete(roles).where(eq(roles.planId, plan));
 }

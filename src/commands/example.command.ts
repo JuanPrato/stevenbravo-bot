@@ -12,7 +12,7 @@ const ExampleCommand: ICommand = {
     await message.reply(
       `USUARIOS:
       ${users.reduce<string>(
-        (acc, user) => acc + `\n <@${user.userId}> ${user.mail}`,
+        (acc, user) => acc + `<@${user.userId}> ${user.mail}\n`,
         ""
       )}`
     );

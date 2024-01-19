@@ -1,11 +1,14 @@
 import { Role } from "discord.js";
-import { IAnswerable, ICommand } from "../types/command.type";
-import { createSlashCommand } from "../utils/discord.util";
-import { db } from "..";
-import { users as usersTable } from "../db/schema";
+import { ICommand } from "../types/command.type";
+import {
+  createEmbedFieldWithText,
+  createEmbedWithText,
+  createMessageWithEmbed,
+  createSlashCommand,
+} from "../utils/discord.util";
 import {
   addRoleToPlan,
-  deletePlanByRole,
+  deleteRoleByPlan,
   editRolePlan,
   getAllRoles,
 } from "../lib/db.lib";
@@ -23,6 +26,7 @@ type Args = {
 };
 
 function isType(type: any): type is Types {
+  if (typeof type === "undefined") return true;
   if (typeof type !== "string") return false;
   return type === Types.ADD || type === Types.REMOVE || type === Types.MODIFY;
 }
@@ -49,26 +53,46 @@ const RoleCommand: ICommand<Args> = {
         break;
       }
       case Types.REMOVE: {
-        await deletePlanByRole(args.role.id);
+        if (!args.planId) throw new Error("Al borrar debe especificar el plan");
+        await deleteRoleByPlan(args.planId);
         break;
       }
-      default:
-        {
-          const roles = await getAllRoles();
-          await message.reply(
-            `ROLES: ${roles.reduce(
-              (acc, role) => acc + `\n<@${role.roleId}> : ${role.planId}`,
-              ""
-            )}`
-          );
-          return;
-        }
-        await message.reply(`OPERACIÓN :${args.type} realizada con éxito`);
+      default: {
+        const roles = await getAllRoles();
+        await message.reply({
+          embeds: [
+            createEmbedWithText(`ROLES:`).addFields(
+              roles.map((rol) =>
+                createEmbedFieldWithText(rol.planId || "-", `<@&${rol.roleId}>`)
+              )
+            ),
+          ],
+        });
+        return;
+      }
     }
+    await message.reply(
+      createMessageWithEmbed(`OPERACIÓN: ${args.type} realizada con éxito`)
+    );
   },
   slashCommand: createSlashCommand(
     "rol",
-    "Comando usado para modificar los roles"
+    "Comando usado para modificar los roles",
+    [
+      {
+        type: "string",
+        name: "acción",
+      },
+      {
+        type: "role",
+        name: "rol",
+      },
+      {
+        type: "string",
+        name: "plan",
+        description: "Id del plan",
+      },
+    ]
   ),
   slashArgsParser: (args) => {
     const type = args.find((a) => a.name === "acción")?.value;
@@ -77,7 +101,7 @@ const RoleCommand: ICommand<Args> = {
     }
     return {
       type,
-      role: args.find((a) => a.name === "role")?.role as Role,
+      role: args.find((a) => a.name === "rol")?.role as Role,
       planId: args.find((a) => a.name === "plan")?.value as string | undefined,
     };
   },
