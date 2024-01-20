@@ -47,9 +47,11 @@ function fillMapWithOrders(
       acc.set(order.planName, []);
     }
 
-    acc
-      .get(order.planName)!
-      .push(users.find((u) => u.wixId === order.buyer?.memberId)!);
+    const u = users.find((u) => u.wixId === order.buyer?.memberId);
+
+    if (!u) return acc;
+
+    acc.get(order.planName)!.push(u);
 
     return acc;
   }, map);

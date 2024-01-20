@@ -5,6 +5,7 @@ import { getRoleByPlan, saveOrUpdateUser } from "../lib/db.lib";
 import { emailRegex } from "../lib/regex.lib";
 import { checkForPlan } from "../lib/wix.lib";
 import { ICommandException, isAnswerable } from "../types/command.type";
+import { createMessageWithEmbed } from "../utils/discord.util";
 
 // Text based command handler
 client.on("messageCreate", async (message) => {
@@ -53,23 +54,27 @@ client.on("messageCreate", async (message) => {
     return;
   }
 
-  const { plan, memberId } = await checkForPlan(mail);
+  try {
+    const { plan, memberId } = await checkForPlan(mail);
 
-  if (!plan || !memberId) return;
+    if (!plan || !memberId) return;
 
-  await saveOrUpdateUser(userId, mail, memberId);
+    await saveOrUpdateUser(userId, mail, memberId);
 
-  await message.reply(
-    `El mail: ${mail} fue asociado al usuario ${message.author}`
-  );
+    await message.reply(
+      `El mail: ${mail} fue asociado al usuario ${message.author}`
+    );
 
-  const roleId = await getRoleByPlan(plan);
+    const roleId = await getRoleByPlan(plan);
 
-  if (!roleId) return;
+    if (!roleId) return;
 
-  const role = guild?.roles.cache.get(roleId);
+    const role = guild?.roles.cache.get(roleId);
 
-  if (!role) return;
+    if (!role) return;
 
-  await member.roles.add(role);
+    await member.roles.add(role);
+  } catch (err: unknown) {
+    await message.reply(createMessageWithEmbed((err as Error).message));
+  }
 });
