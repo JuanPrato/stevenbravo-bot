@@ -1,8 +1,9 @@
 import { eq } from "drizzle-orm";
 import { db } from "..";
-import { roles, users } from "../db/schema";
+import { config, roles, users } from "../db/schema";
 
 export type User = typeof users.$inferSelect;
+export type SaveConfig = typeof config.$inferInsert;
 
 export async function saveOrUpdateUser(
   userId: string,
@@ -48,4 +49,17 @@ export async function editRolePlan(role: string, plan: string) {
 
 export async function deleteRoleByPlan(plan: string) {
   await db.delete(roles).where(eq(roles.planId, plan));
+}
+
+export async function saveOrUpdateConfig(
+  newConfig: SaveConfig,
+  isNew?: boolean
+) {
+  if (isNew) {
+    db.insert(config).values(newConfig).catch(console.error);
+  } else {
+    db.update(config)
+      .set({ announceChannelId: newConfig.announceChannelId })
+      .where(eq(config.guildId, newConfig.guildId));
+  }
 }

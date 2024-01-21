@@ -1,22 +1,36 @@
 import {
   APIEmbedField,
+  ApplicationCommandOptionBase,
   Colors,
   EmbedBuilder,
+  RestOrArray,
   SlashCommandBuilder,
 } from "discord.js";
 import { User, getAllRoles } from "../lib/db.lib";
 import { mainGuild } from "../caches/guild.cache";
 import { client } from "../app";
 
+function createOption<T extends ApplicationCommandOptionBase>(
+  o: T,
+  option: Option
+): T {
+  return o
+    .setName(option.name)
+    .setDescription(option.description || "-")
+    .setRequired(option.required || false);
+}
+
+type Option = {
+  type: "mention" | "string" | "role" | "channel";
+  name: string;
+  description?: string;
+  required?: boolean;
+};
+
 export const createSlashCommand = (
   commandName: string,
   description: string,
-  options?: {
-    type: "mention" | "string" | "role";
-    name: string;
-    description?: string;
-    required?: boolean;
-  }[]
+  options?: Option[]
 ) => {
   const c = new SlashCommandBuilder()
     .setName(commandName)
@@ -25,41 +39,39 @@ export const createSlashCommand = (
   for (const option of options || []) {
     switch (option.type) {
       case "mention":
-        c.addMentionableOption((o) =>
-          o
-            .setName(option.name)
-            .setDescription(option.description || "-")
-            .setRequired(option.required || false)
-        );
+        c.addMentionableOption((o) => createOption(o, option));
         break;
       case "string":
-        c.addStringOption((o) =>
-          o
-            .setName(option.name)
-            .setDescription(option.description || "-")
-            .setRequired(option.required || false)
-        );
+        c.addStringOption((o) => createOption(o, option));
         break;
       case "role":
-        c.addRoleOption((o) =>
-          o
-            .setName(option.name)
-            .setDescription(option.description || "-")
-            .setRequired(option.required || false)
-        );
+        c.addRoleOption((o) => createOption(o, option));
+        break;
+      case "channel":
+        c.addChannelOption((o) => createOption(o, option));
+        break;
     }
   }
   return c;
 };
 
-export const createMessageWithEmbed = (text: string) => {
+export const createMessageWithEmbed = (
+  text: string,
+  fields?: RestOrArray<APIEmbedField>
+) => {
   return {
-    embeds: [createEmbedWithText(text)],
+    embeds: [createEmbedWithText(text, fields)],
   };
 };
 
-export const createEmbedWithText = (title: string) => {
-  return new EmbedBuilder().setTitle(title).setColor(Colors.DarkRed);
+export const createEmbedWithText = (
+  title: string,
+  fields?: RestOrArray<APIEmbedField>
+) => {
+  return new EmbedBuilder()
+    .setTitle(title)
+    .setColor(Colors.DarkRed)
+    .setFields(...(fields || []));
 };
 
 export const createEmbedFieldWithText = (

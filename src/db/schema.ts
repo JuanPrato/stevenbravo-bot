@@ -16,3 +16,8 @@ export const roles = sqliteTable(
     pk: primaryKey({ columns: [table.planId, table.roleId] }),
   })
 );
+
+export const config = sqliteTable("config", {
+  guildId: text("guildId").notNull().primaryKey(),
+  announceChannelId: text("announceChannelId"),
+});
