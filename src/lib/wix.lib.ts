@@ -8,7 +8,7 @@ export async function checkRoles() {
   try {
     const users = await getUsers();
 
-    const membersId = users.map((user) => user.userId);
+    const membersId = users.map((user) => user.wixId);
 
     let wixOrders = await getOrders(membersId);
 
@@ -20,18 +20,14 @@ export async function checkRoles() {
 
     let offset = wixOrders.pagingMetadata?.count || 0;
 
-    while (
-      (wixOrders.pagingMetadata?.total || 0) >
-      (wixOrders.pagingMetadata?.offset || 0) + offset
-    ) {
+    while ((wixOrders.pagingMetadata as any).hasNext) {
       wixOrders = await getOrders(membersId, offset);
       fillMapWithOrders(rolesToUpdate, wixOrders, users);
       offset += wixOrders.pagingMetadata?.count || 1;
     }
-
     await updateUsersRoles(rolesToUpdate);
   } catch (err) {
-    console.error((err as any).details.applicationError);
+    console.error(err as any);
   }
 }
 
