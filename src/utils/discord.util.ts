@@ -72,29 +72,33 @@ export const createEmbedFieldWithText = (
   };
 };
 
-export const updateUsersRoles = async (users: Map<string, User[]>) => {
+export const updateUsersRoles = async (plans: Map<string, User[]>) => {
   const roles = await getAllRoles();
 
   const guild = client.guilds.cache.get(mainGuild.id);
   await guild?.roles.fetch();
   await guild?.members.fetch();
 
-  Array.from(users.entries()).forEach(([planName, roleUsers]) => {
+  Array.from(plans.entries()).forEach(([planName, roleUsers]) => {
     const roleId = roles.find((role) => role.planId === planName)?.roleId;
     if (!roleId) return;
 
-    guild?.roles.cache
-      .get(roleId)
-      ?.members?.filter((m) => !roleUsers.some((ru) => ru.userId === m.id))
+    const role = guild?.roles.cache.get(roleId);
+
+    if (!role) return;
+
+    role.members
+      ?.filter((m) => !roleUsers.some((ru) => ru.userId === m.id))
       .forEach((u) => u.roles.remove(roleId));
 
     roleUsers.forEach(async (ru) => {
       const member = guild?.members.cache.get(ru.userId);
+      if (!member) return;
 
-      if (member?.roles.resolveId(roleId)) {
+      if (role.members.has(member.id)) {
         return;
       }
-      await member?.roles.add(roleId);
+      member?.roles.add(roleId).catch(console.error);
     });
   });
 };
