@@ -2,12 +2,8 @@ import { client } from "../app";
 import { Events, TextChannel } from "discord.js";
 import { createEmbedWithText } from "../utils/discord.util";
 import { db } from "..";
-import { config as configTable } from "../db/schema";
+import { config as configTable, users } from "../db/schema";
 import { eq } from "drizzle-orm";
-
-function channelIsTextChannel(c: any): c is TextChannel {
-  return true;
-}
 
 client.on(Events.GuildMemberAdd, async (member) => {
   const [config, ..._] = await db
@@ -28,4 +24,8 @@ client.on(Events.GuildMemberAdd, async (member) => {
       ),
     ],
   });
+});
+
+client.on(Events.GuildMemberRemove, async (member) => {
+  await db.delete(users).where(eq(users.userId, member.id));
 });
