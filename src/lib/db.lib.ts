@@ -26,9 +26,13 @@ export async function getAllRoles() {
 }
 
 export async function getRoleByPlan(planId: string) {
-  const results = await db.select().from(roles).where(eq(roles.planId, planId));
+  const results = await db.select().from(roles);
 
-  return results[0]?.roleId;
+  const role = results.find(
+    (plan) => plan.planId?.toLowerCase() === planId.toLocaleLowerCase()
+  );
+
+  return role?.roleId;
 }
 
 export async function addRoleToPlan(role: string, plan: string) {
