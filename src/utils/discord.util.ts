@@ -99,9 +99,23 @@ export const updateUsersRoles = async (plans: Map<string, User[]>) => {
 
     if (!role) return;
 
+    const plansNameWithSameRole = roles.filter(
+      (role) => role.roleId === roleId && role.planId !== planName
+    );
+
     role.members
       ?.filter((m) => !roleUsers.some((ru) => ru.userId === m.id))
-      .forEach((u) => u.roles.remove(roleId));
+      .forEach(async (u) => {
+        if (
+          !plansNameWithSameRole.some((diffPlanName) => {
+            const plan = plans.get(diffPlanName.planId!);
+            if (!plan) return false;
+            return plan.some((pu) => pu.userId === u.id);
+          })
+        ) {
+          await u.roles.remove(roleId);
+        }
+      });
 
     roleUsers.forEach(async (ru) => {
       const member = guild?.members.cache.get(ru.userId);
